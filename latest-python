@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+if command -v pyenv; then
+    py_version=$(pyenv install --list | \grep -vE "\-|rc" | \grep " 3\.[6789]" | tail -n 1 | awk '{$1=$1};1')
+
+    pyenv install "$py_version"
+    pyenv global "$py_version"
+    echo "Installed Python $py_version"
+else
+    echo "pyenv not installed"
+    echo "curl https://pyenv.run | bash"
+    echo "  or"
+    echo "brew install pyenv pyenv-virtualenv"
+    exit 1
+fi

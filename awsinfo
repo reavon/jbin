@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+"""Returns account number, region, account alias
+
+Author: Tracy Phillips
+"""
+
+import boto3
+
+IAM_CLIENT = boto3.client("iam")
+STS_CLIENT = boto3.client("sts")
+
+
+def account_alias() -> str:
+    """Account Alias.
+    """
+    response = IAM_CLIENT.list_account_aliases()
+    account_aliases = response["AccountAliases"]
+    account_alias_lower = account_aliases[0].lower()
+    return account_alias_lower
+
+
+def account() -> str:
+    """Account Number
+    """
+    response = STS_CLIENT.get_caller_identity()
+    account_number = response["Account"]
+    return account_number
+
+
+def region() -> str:
+    """Region
+    """
+    response = STS_CLIENT.meta.region_name
+    return response
+
+
+def caller() -> str:
+    """Caller
+    """
+    response = STS_CLIENT.get_caller_identity()
+    arn = response["Arn"]
+    data = arn.split('/')
+    whoami = data[1] + "/" + data[2]
+    return whoami
+
+
+# Make it pretty
+def main():
+    """Return responses from above functions
+    """
+    print("Account Alias:   " + account_alias())
+    print("Account Number:  " + account())
+    print("Region:          " + region())
+    print("UserId:          " + caller())
+
+
+if __name__ == "__main__":
+    main()

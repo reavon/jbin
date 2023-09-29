@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+filename=$(basename "$1")
+full_path=$1
+date=$(date +%Y%m%d)
+backup_path="$HOME/.backups"
+
+usage () {
+    echo "Usage: $(basename "$0") filename"
+}
+
+if [[ -z "$full_path" && ! -f "$full_path" ]]; then
+    usage
+    exit 1
+fi
+
+rev=0
+
+if [[ -d $backup_path ]]; then
+    backup="$backup_path/$filename.$date.$rev"
+else
+    mkdir -p "$backup_path"
+    backup="$backup_path/$filename.$date.$rev"
+fi
+
+while [ -f "$backup" ]; do
+    ((rev+=1))
+    backup="$backup_path/$filename.$date.$rev"
+done
+
+/bin/cp -a "$full_path" "$backup" && echo "The file $full_path has been backed up as $backup"
+
+exit $?

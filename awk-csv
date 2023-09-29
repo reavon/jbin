@@ -1,0 +1,7 @@
+#!/bin/bash
+
+file=$1
+
+# awk -F "\"*,\"*" '{print $1}' $1 | cut -d \" -f 2
+
+cut -d \" -f 2 $1 | sed -e '/-/d' | sed -e '1,6d'

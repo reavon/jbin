@@ -1,0 +1,3 @@
+#!/bin/bash
+
+tree -d -L 2

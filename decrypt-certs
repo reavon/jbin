@@ -1,0 +1,37 @@
+#!/bin/bash
+
+FQDN=$(openssl x509 -text -in certificate.txt | grep "Subject: CN=" | sed -e 's/ *Subject: CN=//')
+ME=$(whoami)
+
+mkdir -p "${PML_HOME}/acm-certs/$FQDN"
+
+mv certificate.txt "${PML_HOME}/acm-certs/$FQDN"/
+mv certificate_chain.txt "${PML_HOME}/acm-certs/$FQDN"/
+mv private_key.txt "${PML_HOME}/acm-certs/$FQDN"/
+
+openssl rsa -in "${PML_HOME}/acm-certs/$FQDN/private_key.txt" -out "${PML_HOME}/acm-certs/$FQDN.pem" -passin pass:0000
+
+cat "${PML_HOME}/acm-certs/$FQDN/certificate.txt" >> "${PML_HOME}/acm-certs/$FQDN.pem"
+cat "${PML_HOME}/acm-certs/$FQDN/certificate_chain.txt" >> "${PML_HOME}/acm-certs/$FQDN.pem"
+
+openssl x509 -text -in "${PML_HOME}/acm-certs/$FQDN.pem"
+
+cd "${PML_HOME}/acm-certs/" || exit
+
+if echo "$FQDN" | grep -E -q -e "-(dev|mo)\." ; then
+    echo "non-production VIP"
+    scp "$FQDN.pem" testhaproxy01:/home/"${ME}"/
+    scp "$FQDN.pem" testhaproxy02:/home/"${ME}"/
+elif echo "$FQDN" | grep -q "-" ; then
+    echo "production VIP"
+    scp "$FQDN.pem" prodhaproxy01:/home/"${ME}"/
+    scp "$FQDN.pem" prodhaproxy02:/home/"${ME}"/
+else
+    echo "This is a host cert, deploy it to the relevant host"
+    ansible-playbook ~/ansible-vm-control/playbooks/ansible-deploy-cert.yml -e awsCertificateCheck=false -l "$FQDN"
+fi
+
+echo "sudo su -"
+echo "cp /home/${ME}/$FQDN.pem /etc/pki/tls/certs/"
+echo "chmod 600 /etc/pki/tls/certs/$FQDN.pem"
+echo "chown root:root /etc/pki/tls/certs/$FQDN.pem"

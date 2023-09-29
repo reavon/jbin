@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+"""
+Configures ~/.aws/config with all AWS accounts for use with SSO at the CLI
+
+Author: Tracy Phillips
+"""
+
+import boto3
+from pathlib import Path
+
+session = boto3.session.Session(profile_name='aws-sso')
+client = session.client('organizations')
+results = (client.get_paginator('list_accounts').paginate().build_full_result())
+
+
+def accounts() -> list:
+    id_list = []
+    name_list = []
+    account_list = []
+    for aws_account in results["Accounts"]:
+        account_id = aws_account["Id"]
+        account_name = aws_account["Name"]
+        id_list.append(account_id)
+        name_list.append(account_name)
+    for i in range(len(id_list)):
+        account_list.append([id_list[i], name_list[i]])
+    return account_list
+
+
+def aws_accounts():
+    aws_account_list = []
+    with open(Path('~/.aws/config').expanduser(), "w") as file:
+        file.seek(0)
+        file.truncate()
+    for account in accounts():
+        aws_account_list = """
+        [profile {id}]
+        output = json
+        region = aws_region
+        sso_account_id = {name}
+        sso_region = aws_region
+        sso_role_name = sso_role_name
+        sso_session = aws-sso
+        """.format(id=account[1].lower(), name=account[0]).replace("    ", "")
+        with open(Path('~/.aws/config').expanduser(), "a") as file:
+            file.write(aws_account_list)
+            #  The 'with' block automatically takes care closing the file at the end of the block.
+            #  file.close()
+    return aws_account_list
+
+
+def existing_aws_accounts():
+    existing_accounts = """
+    [default]
+    sso_session = aws-sso
+    sso_account_id = aws_account_number
+    sso_role_name = sso_role_name
+    region = aws_region
+    output = json
+
+    [sso-session aws-sso]
+    sso_region = aws_region
+    sso_registration_scopes = sso:account:access
+    sso_start_url = so_start_url
+
+    """.replace("  ", "")
+    with open(Path('~/.aws/config').expanduser(), "a") as file:
+        file.write(existing_accounts)
+    return existing_aws_accounts
+
+
+def main():
+    aws_account_number = "480914844964"
+    aws_region = "us-east-1"
+    sso_role_name = "AdministratorAccess"
+    sso_start_url = "https://d-90679b857f.awsapps.com/start"
+
+    aws_accounts()
+    existing_aws_accounts()
+
+
+if __name__ == "__main__":
+    main()

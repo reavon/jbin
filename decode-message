@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# REF: https://gist.github.com/xiongchiamiov/b0ef0251813625307371d0e11e131759#file-why-sh
+# REF: https://bcb.github.io/pipe-jq-to-less
+
+function decode-authorization-failure-message {
+    if [ $# -ne 1 ] || [ "$1" = -h ] || [ "$1" = --help ]; then
+        cat <<'EOT'
+Usage: decode-message <message>
+Use this when Amazon gives you an "Encoded authorization failure message" and
+you need to turn it into something readable.
+EOT
+        return 1
+    fi
+
+    aws sts decode-authorization-message --encoded-message "$1" |
+    jq '.["DecodedMessage"]' |
+    sed 's/\\"/"/g' |
+    sed 's/^"//' |
+    sed 's/"$//' |
+    jq -C '.' | less -R
+}
+
+
+decode-authorization-failure-message "$1"

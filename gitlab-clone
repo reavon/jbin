@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd $HOME/gitlab-archive/repos
+
+glab repo clone -g $1 -p --paginate

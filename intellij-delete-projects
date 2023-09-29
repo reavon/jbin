@@ -1,0 +1,3 @@
+#/usr/bin/env bash
+
+find ~/Library/Application\ Support/JetBrains/IntelliJIdea* -name recentProjects.xml -type f -delete

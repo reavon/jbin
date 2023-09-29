@@ -1,0 +1,5 @@
+#/bin/bash
+
+for i in `ls -1`; do cd $i && git config --local rsync.remote "root@builder.mantoso.com:/root/mntv/$i" && cd .. ; done
+
+for i in `ls -1`; do cd $i && git rsync push && cd .. ; done

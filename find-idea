@@ -1,0 +1,5 @@
+#!/bin/bash
+
+for i in $(find . -name .idea -type d); do
+    rm -rf "$i"
+done

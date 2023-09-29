@@ -1,0 +1,5 @@
+#/bin/bash
+
+find . -name '.*icloud' | perl -pe 's|(.*)/.(.*).icloud|$1/$2|s' | while read file; do brctl download "$file"; done
+
+brctl log -w -t

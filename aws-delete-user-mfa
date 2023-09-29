@@ -1,0 +1,26 @@
+#!/bin/bash
+
+user=$1
+
+if [[ -z $user ]] ; then
+	echo "Specify user to remove access keys and tokens from."
+	exit 0
+fi
+
+# Check to see if the user exists
+aws iam get-user --user-name $user > /dev/null
+if [[ $? -ne 0 ]] ; then
+	# If there's an error, we'll see the problem (likely NoSuchEntity) sent to STDERR
+	exit 1
+fi
+
+mfas=$(aws iam list-mfa-devices --user-name $user | grep SerialNumber | cut -d : -f 2- | sed 's/[ ",]//g')
+for mfa in $mfas ; do
+	echo "aws iam deactivate-mfa-device --user-name $user --serial-number $mfa"
+	echo "aws iam delete-virtual-mfa-device --serial-number $mfa"
+done
+
+keys=$(aws iam list-access-keys --user-name $user | grep AccessKeyId | cut -d : -f 2 | sed 's/[ ",]//g')
+for key in $keys ; do
+	echo "aws iam delete-access-key --user-name $user --access-key-id $key"
+done

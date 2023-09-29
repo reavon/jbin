@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+path="$HOME/Projects/occs/git-repos/aws/IAM"
+env=$(aws iam list-account-aliases --output text | awk '{print $2}')
+ENV=$(echo "${env}" | tr '[:lower:]' '[:upper:]')
+
+echo "You are logged into $ENV environment"
+yaml_path=${ENV}
+
+json_path=$(echo "${ENV}" | cut -c 5-)
+
+if [[ ! ${ENV} =~ 'INT' &&  ! ${ENV} =~ 'SBOX' ]]
+then
+    yaml_path='QA-PROD'
+fi
+
+if [[ ${ENV} =~ 'SBOX' ]]
+then
+    yaml_path='SBOX'
+fi
+
+if [[ ${ENV} =~ 'INT' ]]; then
+    yaml_path='INT'
+fi
+
+echo ${yaml_path}
+echo "Updating $ENV IAM..."
+echo "Uploading IAM policy file to S3..."
+
+sleep 2
+
+cd "${path}" || exit
+
+aws s3 cp iam-policies-and-roles-${yaml_path}.yaml s3://"${env}"-cloudformation-templates-us-east-1/iam/iam-policies-and-roles-${yaml_path}.yaml --sse
+echo "Creating CFN stack now..."
+
+aws cloudformation update-stack --cli-input-json file://param-files/create-stack-"${json_path}"-iam-policies-and-roles.json --template-url https://s3.amazonaws.com/"${env}"-cloudformation-templates-us-east-1/iam/iam-policies-and-roles-${yaml_path}.yaml --capabilities CAPABILITY_NAMED_IAM
+echo "Done..."
